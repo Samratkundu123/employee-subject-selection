@@ -51,6 +51,10 @@ require_once __DIR__ . '/../layout/header.php';
                         placeholder="Enter your password" 
                         required
                     >
+                    <div style="margin-top: 8px; font-size: 0.83rem; color: #475569; display: flex; align-items: center; gap: 6px;">
+                        <svg width="15" height="15" fill="none" stroke="#0284c7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Default password is <code style="background: #e2e8f0; padding: 2px 7px; border-radius: 4px; font-weight: 700; color: #002147; font-size: 0.88rem;">nopass</code></span>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-primary-custom" style="margin-top: 1.5rem;">

@@ -10,6 +10,7 @@ require_once __DIR__ . '/models/Subject.php';
 require_once __DIR__ . '/models/Faculty.php';
 require_once __DIR__ . '/models/Submission.php';
 require_once __DIR__ . '/services/ExcelExport.php';
+require_once __DIR__ . '/services/ExcelImport.php';
 require_once __DIR__ . '/helpers/Response.php';
 
 class Router
@@ -110,6 +111,18 @@ class Router
                 case '/api/hod/export':
                 case '/admin/export':
                     self::handleHodExport();
+                    break;
+
+                case '/api/hod/subjects/upload':
+                    if ($method === 'POST') {
+                        self::handleHodUploadSubjects();
+                    } else {
+                        Response::json(['error' => 'Method Not Allowed'], 405);
+                    }
+                    break;
+
+                case '/api/hod/subjects/template':
+                    self::handleHodSubjectTemplate();
                     break;
 
                 // Health & Diagnostics
@@ -514,6 +527,70 @@ class Router
         } catch (Throwable $e) {
             Response::json(['success' => false, 'message' => 'Failed to remove faculty member.'], 500);
         }
+    }
+
+    private static function handleHodUploadSubjects(): void
+    {
+        Auth::requireHod(true);
+
+        if (empty($_FILES['subject_file']) || $_FILES['subject_file']['error'] !== UPLOAD_ERR_OK) {
+            $errCode = $_FILES['subject_file']['error'] ?? 'missing';
+            Response::json([
+                'success' => false,
+                'message' => "File upload failed or no file selected (Code: {$errCode})."
+            ], 400);
+        }
+
+        $file = $_FILES['subject_file'];
+        $tmpPath = $file['tmp_name'];
+        $origName = $file['name'];
+        $mode = $_POST['mode'] ?? 'replace';
+        $replace = ($mode === 'replace');
+
+        try {
+            $parsedSubjects = ExcelImport::parseSubjectsFile($tmpPath, $origName);
+
+            if (empty($parsedSubjects)) {
+                Response::json([
+                    'success' => false,
+                    'message' => 'The uploaded file does not contain any valid subject records.'
+                ], 400);
+            }
+
+            $count = Subject::importSubjects($parsedSubjects, $replace);
+
+            Response::json([
+                'success' => true,
+                'message' => "Successfully imported {$count} subjects into the catalog.",
+                'count'   => $count,
+                'mode'    => $mode
+            ], 200);
+
+        } catch (InvalidArgumentException $e) {
+            Response::json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 400);
+        } catch (Throwable $e) {
+            error_log("Upload subjects error: " . $e->getMessage());
+            Response::json([
+                'success' => false,
+                'message' => 'Failed to process subjects file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private static function handleHodSubjectTemplate(): void
+    {
+        Auth::requireHod();
+
+        $csv = Subject::getTemplateCsv();
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="subject_catalog_template.csv"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        echo $csv;
+        exit;
     }
 
     // ==========================================

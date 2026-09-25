@@ -11,6 +11,14 @@ require_once __DIR__ . '/../layout/header.php';
         </p>
     </div>
     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="btn-secondary-custom" id="btnRefreshData" title="Refresh live roster and submissions" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 15px; font-size: 0.88rem; background: #ffffff; border: 1px solid var(--border-color); color: var(--bwu-navy); border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <svg id="refreshIcon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Refresh</span>
+        </button>
+        <button type="button" class="btn-primary-custom" id="btnOpenUploadSubjects" style="width: auto; padding: 9px 16px; font-size: 0.88rem; background: #0284c7; border-color: #0284c7;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            <span>Upload Subjects</span>
+        </button>
         <button type="button" class="btn-primary-custom" id="btnOpenAddFaculty" style="width: auto; padding: 9px 18px; font-size: 0.88rem; background: var(--bwu-navy);">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             <span>Add Faculty</span>
@@ -158,6 +166,64 @@ require_once __DIR__ . '/../layout/header.php';
                 <button type="button" class="btn-secondary-custom" id="btnAddFacultyCancel">Cancel</button>
                 <button type="submit" class="btn-primary-custom" id="btnSaveFaculty" style="width: auto;">
                     <span>Save Faculty</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Upload Subjects Modal -->
+<div id="uploadSubjectsModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 560px;">
+        <div class="modal-header">
+            <h3>Upload Academic Subjects</h3>
+            <button type="button" class="modal-close-btn" id="btnUploadSubjectsClose">&times;</button>
+        </div>
+        <form id="uploadSubjectsForm" enctype="multipart/form-data">
+            <div class="modal-body">
+                <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;">
+                    Upload an Excel (<code>.xlsx</code>) or CSV (<code>.csv</code>) file with your curriculum subjects. The updated list will immediately be displayed in all faculty profiles for subject selection.
+                </p>
+
+                <div class="form-group">
+                    <label for="subjectFileInput">Select Excel or CSV File</label>
+                    <input 
+                        type="file" 
+                        id="subjectFileInput" 
+                        name="subject_file" 
+                        class="form-control-custom" 
+                        accept=".xlsx, .csv, .txt, .xls" 
+                        required
+                        style="padding: 8px 12px;"
+                    >
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+                        <small style="color: var(--text-muted); font-size: 0.78rem;">Supported formats: .xlsx, .csv</small>
+                        <a href="/api/hod/subjects/template" class="text-link" style="font-size: 0.82rem; font-weight: 600; color: var(--bwu-navy); text-decoration: underline;">
+                            Download Template (.csv) &darr;
+                        </a>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label style="margin-bottom: 8px;">Import Mode</label>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 0.88rem; cursor: pointer;">
+                            <input type="radio" name="mode" value="replace" checked style="accent-color: var(--bwu-navy);">
+                            <span><strong>Replace Active Catalog</strong> (Replaces active subjects with this new list)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; font-size: 0.88rem; cursor: pointer;">
+                            <input type="radio" name="mode" value="append" style="accent-color: var(--bwu-navy);">
+                            <span><strong>Append to Catalog</strong> (Keeps existing subjects and adds new ones)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div id="uploadStatusMsg" style="display: none; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-custom" id="btnUploadSubjectsCancel">Cancel</button>
+                <button type="submit" class="btn-primary-custom" id="btnSubmitUploadSubjects" style="width: auto; background: #0284c7; border-color: #0284c7;">
+                    <span id="uploadBtnText">Import & Update Catalog</span>
                 </button>
             </div>
         </form>

@@ -54,4 +54,77 @@ class Subject
         $stmt = $pdo->query("SELECT COUNT(*) FROM subjects WHERE active = 1");
         return (int)$stmt->fetchColumn();
     }
+
+    /**
+     * Imports an array of subjects.
+     * If $replace is true:
+     * - If no submissions exist, clears existing subjects.
+     * - If submissions exist, deactivates older subjects to protect foreign key integrity.
+     */
+    public static function importSubjects(array $subjects, bool $replace = true): int
+    {
+        if (empty($subjects)) {
+            throw new InvalidArgumentException("No valid subjects found to import.");
+        }
+
+        $pdo = Database::getConnection();
+        $pdo->beginTransaction();
+
+        try {
+            $subCount = (int)$pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn();
+
+            if ($replace) {
+                if ($subCount > 0) {
+                    $pdo->exec("UPDATE subjects SET active = 0");
+                } else {
+                    $pdo->exec("DELETE FROM subjects");
+                }
+            }
+
+            $stmt = $pdo->prepare(
+                "INSERT INTO subjects (subject_code, subject_name, active) 
+                 VALUES (:code, :name, 1)"
+            );
+
+            $imported = 0;
+            foreach ($subjects as $s) {
+                $code = trim($s['subject_code'] ?? '');
+                $name = trim($s['subject_name'] ?? '');
+
+                if ($name === '') {
+                    continue;
+                }
+
+                if ($code === '') {
+                    $code = sprintf('SUB-%02d', $imported + 1);
+                }
+
+                $stmt->execute([
+                    ':code' => $code,
+                    ':name' => $name
+                ]);
+                $imported++;
+            }
+
+            $pdo->commit();
+            return $imported;
+
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
+
+    public static function getTemplateCsv(): string
+    {
+        $csv = "Subject Code,Subject Name\r\n";
+        $csv .= "SUB-01,Database Management System\r\n";
+        $csv .= "SUB-02,Computer Network\r\n";
+        $csv .= "SUB-03,Operating System\r\n";
+        $csv .= "SUB-04,Data Structure and Algorithm\r\n";
+        $csv .= "SUB-05,Machine Learning\r\n";
+        return $csv;
+    }
 }

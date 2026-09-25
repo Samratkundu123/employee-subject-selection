@@ -191,6 +191,102 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Refresh Live Roster & Submissions
+    const btnRefreshData = document.getElementById('btnRefreshData');
+    const refreshIcon = document.getElementById('refreshIcon');
+
+    if (btnRefreshData) {
+        btnRefreshData.addEventListener('click', async () => {
+            if (refreshIcon) {
+                refreshIcon.style.transition = 'transform 0.6s ease';
+                refreshIcon.style.transform = 'rotate(360deg)';
+            }
+            btnRefreshData.disabled = true;
+
+            await fetchFacultyData();
+
+            setTimeout(() => {
+                if (refreshIcon) {
+                    refreshIcon.style.transition = 'none';
+                    refreshIcon.style.transform = 'rotate(0deg)';
+                }
+                btnRefreshData.disabled = false;
+                showToast('Roster and submission data refreshed!', 'success');
+            }, 400);
+        });
+    }
+
+    // Upload Subjects Modal Handling
+    const uploadSubjectsModal = document.getElementById('uploadSubjectsModal');
+    const btnOpenUploadSubjects = document.getElementById('btnOpenUploadSubjects');
+    const btnUploadSubjectsClose = document.getElementById('btnUploadSubjectsClose');
+    const btnUploadSubjectsCancel = document.getElementById('btnUploadSubjectsCancel');
+    const uploadSubjectsForm = document.getElementById('uploadSubjectsForm');
+    const btnSubmitUploadSubjects = document.getElementById('btnSubmitUploadSubjects');
+    const uploadBtnText = document.getElementById('uploadBtnText');
+    const uploadStatusMsg = document.getElementById('uploadStatusMsg');
+
+    if (btnOpenUploadSubjects && uploadSubjectsModal) {
+        btnOpenUploadSubjects.addEventListener('click', () => {
+            if (uploadSubjectsForm) uploadSubjectsForm.reset();
+            if (uploadStatusMsg) uploadStatusMsg.style.display = 'none';
+            uploadSubjectsModal.classList.add('active');
+        });
+
+        const closeUploadModal = () => {
+            uploadSubjectsModal.classList.remove('active');
+        };
+
+        if (btnUploadSubjectsClose) btnUploadSubjectsClose.addEventListener('click', closeUploadModal);
+        if (btnUploadSubjectsCancel) btnUploadSubjectsCancel.addEventListener('click', closeUploadModal);
+
+        if (uploadSubjectsForm) {
+            uploadSubjectsForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const fileInput = document.getElementById('subjectFileInput');
+                if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                    showToast('Please select an Excel or CSV file to upload.', 'warning');
+                    return;
+                }
+
+                const formData = new FormData(uploadSubjectsForm);
+
+                btnSubmitUploadSubjects.disabled = true;
+                if (uploadBtnText) uploadBtnText.textContent = 'Uploading & Importing...';
+                if (uploadStatusMsg) uploadStatusMsg.style.display = 'none';
+
+                try {
+                    const res = await fetch('/api/hod/subjects/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await res.json();
+
+                    if (res.ok && data.success) {
+                        showToast(`Successfully imported ${data.count} subjects into catalog!`, 'success');
+                        closeUploadModal();
+                    } else {
+                        if (uploadStatusMsg) {
+                            uploadStatusMsg.style.display = 'block';
+                            uploadStatusMsg.style.background = '#fef2f2';
+                            uploadStatusMsg.style.color = '#b91c1c';
+                            uploadStatusMsg.style.border = '1px solid #fecaca';
+                            uploadStatusMsg.textContent = data.message || 'Failed to upload subjects.';
+                        }
+                        showToast(data.message || 'Failed to upload subjects.', 'error');
+                    }
+                } catch (err) {
+                    showToast('Network error while uploading subjects file.', 'error');
+                } finally {
+                    btnSubmitUploadSubjects.disabled = false;
+                    if (uploadBtnText) uploadBtnText.textContent = 'Import & Update Catalog';
+                }
+            });
+        }
+    }
+
     function escapeHtml(str) {
         if (!str) return '-';
         const div = document.createElement('div');
