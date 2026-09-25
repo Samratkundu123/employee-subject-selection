@@ -531,6 +531,12 @@ class Router
             'version'     => '2.0.0',
             'php_version' => PHP_VERSION,
             'environment' => $isVercel ? 'Vercel Serverless' : 'Local / Custom Server',
+            'debug_env'   => [
+                'getenv_host'  => getenv('DB_HOST') !== false ? getenv('DB_HOST') : 'false',
+                'server_host'  => $_SERVER['DB_HOST'] ?? 'not_set',
+                'env_host'     => $_ENV['DB_HOST'] ?? 'not_set',
+                'server_keys'  => array_values(array_filter(array_keys($_SERVER), fn($k) => str_starts_with($k, 'DB_') || str_contains($k, 'VERCEL'))),
+            ],
             'database'    => $dbStatus
         ];
 
