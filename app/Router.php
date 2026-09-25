@@ -197,6 +197,8 @@ class Router
 
         $email = strtolower(trim((string)($_POST['email'] ?? '')));
         $password = (string)($_POST['password'] ?? '');
+        $inputName = trim((string)($_POST['name'] ?? ''));
+        $inputCode = strtoupper(trim((string)($_POST['employee_code'] ?? '')));
 
         if ($email === '' || $password === '') {
             $_SESSION['_flash_error'] = 'Please enter both your email address and password.';
@@ -226,13 +228,24 @@ class Router
                 // Verify hash or standard password
                 if (password_verify($password, $faculty['password_hash']) || $password === 'Faculty@123' || $password === 'nopass') {
                     $authSuccess = true;
+                    // Update name / employee code if provided on login form
+                    $newName = $inputName !== '' ? $inputName : $faculty['name'];
+                    $newCode = $inputCode !== '' ? $inputCode : $faculty['employee_code'];
+                    if ($newName !== $faculty['name'] || $newCode !== $faculty['employee_code']) {
+                        try {
+                            Faculty::updateDetails((int)$faculty['id'], $newName, $newCode);
+                            $faculty = Faculty::findById((int)$faculty['id']);
+                        } catch (Throwable $e) {
+                            error_log("Login profile update notice: " . $e->getMessage());
+                        }
+                    }
                 }
             } elseif ($password === 'Faculty@123' || $password === 'nopass') {
                 // Auto-provision faculty if logging in with valid domain and default credentials
                 try {
                     $localPart = explode('@', $email)[0];
-                    $autoName = ucwords(str_replace(['.', '_', '-'], ' ', $localPart));
-                    $autoCode = 'BWU-' . strtoupper(substr(md5($email), 0, 5));
+                    $autoName = $inputName !== '' ? $inputName : ucwords(str_replace(['.', '_', '-'], ' ', $localPart));
+                    $autoCode = $inputCode !== '' ? $inputCode : ('BWU-' . strtoupper(substr(md5($email), 0, 5)));
                     $faculty = Faculty::create($autoName, $email, $autoCode, $password);
                     $authSuccess = true;
                 } catch (Throwable $e) {

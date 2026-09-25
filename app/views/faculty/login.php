@@ -28,7 +28,31 @@ require_once __DIR__ . '/../layout/header.php';
                 <?= Auth::csrfField() ?>
 
                 <div class="form-group">
-                    <label for="email">Official University Email</label>
+                    <label for="name">Faculty Name</label>
+                    <input 
+                        type="text" 
+                        name="name" 
+                        id="name" 
+                        class="form-control-custom" 
+                        placeholder="e.g. Dr. Arindam Roy" 
+                        value="<?= Response::escape($name ?? '') ?>"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="employee_code">Faculty Employee Code</label>
+                    <input 
+                        type="text" 
+                        name="employee_code" 
+                        id="employee_code" 
+                        class="form-control-custom" 
+                        placeholder="e.g. BWU/EMP/2026/042" 
+                        value="<?= Response::escape($employee_code ?? '') ?>"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Faculty Email ID</label>
                     <input 
                         type="email" 
                         name="email" 
@@ -36,8 +60,7 @@ require_once __DIR__ . '/../layout/header.php';
                         class="form-control-custom" 
                         placeholder="e.g. arindam.cs@brainwareuniversity.ac.in" 
                         value="<?= Response::escape($email ?? '') ?>" 
-                        required 
-                        autofocus
+                        required
                     >
                 </div>
 

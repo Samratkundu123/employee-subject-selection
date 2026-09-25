@@ -38,10 +38,14 @@ $currentHod = Auth::getCurrentHod();
         </a>
 
         <?php if ($currentFaculty): ?>
-            <div class="nav-user-meta">
-                <div class="user-badge">
-                    <span>👨‍🏫 <strong><?= Response::escape($currentFaculty['name']) ?></strong></span>
-                    <span class="role-tag"><?= Response::escape($currentFaculty['employee_code']) ?></span>
+            <div class="nav-user-meta" style="display: flex; align-items: center; gap: 12px;">
+                <div class="user-badge" style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.35; padding: 4px 10px;">
+                    <span style="font-weight: 700; color: var(--bwu-navy); font-size: 0.88rem;">
+                        👨‍🏫 <?= Response::escape($currentFaculty['name']) ?>
+                    </span>
+                    <span style="font-size: 0.76rem; color: var(--text-muted);">
+                        Emp Code: <strong><?= Response::escape($currentFaculty['employee_code']) ?></strong> &bull; <?= Response::escape($currentFaculty['email']) ?>
+                    </span>
                 </div>
                 <a href="/logout" class="btn-nav-logout">Logout</a>
             </div>
