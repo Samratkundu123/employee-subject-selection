@@ -28,50 +28,52 @@ require_once __DIR__ . '/../layout/header.php';
                 <?= Auth::csrfField() ?>
 
                 <div class="form-group">
-                    <label for="name">Faculty Name</label>
+                    <label for="name">Faculty Name <span style="color: #ef4444;">*</span></label>
                     <input 
                         type="text" 
                         name="name" 
                         id="name" 
                         class="form-control-custom" 
-                        placeholder="e.g. Dr. Arindam Roy" 
+                        placeholder="e.g. sAMRAT KUNDU" 
                         value="<?= Response::escape($name ?? '') ?>"
+                        required
                     >
                 </div>
 
                 <div class="form-group">
-                    <label for="employee_code">Faculty Employee Code</label>
+                    <label for="employee_code">Faculty Employee Code <span style="color: #ef4444;">*</span></label>
                     <input 
                         type="text" 
                         name="employee_code" 
                         id="employee_code" 
                         class="form-control-custom" 
-                        placeholder="e.g. BWU/EMP/2026/042" 
+                        placeholder="e.g. 11XX" 
                         value="<?= Response::escape($employee_code ?? '') ?>"
+                        required
                     >
                 </div>
 
                 <div class="form-group">
-                    <label for="email">Faculty Email ID</label>
+                    <label for="email">Faculty Email ID <span style="color: #ef4444;">*</span></label>
                     <input 
                         type="email" 
                         name="email" 
                         id="email" 
                         class="form-control-custom" 
-                        placeholder="e.g. arindam.cs@brainwareuniversity.ac.in" 
+                        placeholder="smk.cs@brainwareuniversity.ac.in" 
                         value="<?= Response::escape($email ?? '') ?>" 
                         required
                     >
                 </div>
 
                 <div class="form-group">
-                    <label for="password">Password</label>
+                    <label for="password">Password <span style="color: #ef4444;">*</span></label>
                     <input 
                         type="password" 
                         name="password" 
                         id="password" 
                         class="form-control-custom" 
-                        placeholder="Enter your password" 
+                        placeholder="nopass" 
                         required
                     >
                     <div style="margin-top: 8px; font-size: 0.83rem; color: #475569; display: flex; align-items: center; gap: 6px;">

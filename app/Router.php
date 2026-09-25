@@ -183,6 +183,10 @@ class Router
         unset($_SESSION['_flash_error']);
         $email = $_SESSION['_flash_email'] ?? '';
         unset($_SESSION['_flash_email']);
+        $name = $_SESSION['_flash_name'] ?? '';
+        unset($_SESSION['_flash_name']);
+        $employee_code = $_SESSION['_flash_employee_code'] ?? '';
+        unset($_SESSION['_flash_employee_code']);
 
         require __DIR__ . '/views/faculty/login.php';
     }
@@ -200,9 +204,11 @@ class Router
         $inputName = trim((string)($_POST['name'] ?? ''));
         $inputCode = strtoupper(trim((string)($_POST['employee_code'] ?? '')));
 
-        if ($email === '' || $password === '') {
-            $_SESSION['_flash_error'] = 'Please enter both your email address and password.';
+        if ($inputName === '' || $inputCode === '' || $email === '' || $password === '') {
+            $_SESSION['_flash_error'] = 'All fields (Faculty Name, Faculty Employee Code, Faculty Email ID, and Password) are required.';
             $_SESSION['_flash_email'] = $email;
+            $_SESSION['_flash_name'] = $inputName;
+            $_SESSION['_flash_employee_code'] = $inputCode;
             Response::redirect('/login');
         }
 
@@ -210,6 +216,8 @@ class Router
         if (!Response::isValidEmail($email)) {
             $_SESSION['_flash_error'] = 'Please enter a valid official university email address.';
             $_SESSION['_flash_email'] = $email;
+            $_SESSION['_flash_name'] = $inputName;
+            $_SESSION['_flash_employee_code'] = $inputCode;
             Response::redirect('/login');
         }
 
