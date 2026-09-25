@@ -5,15 +5,46 @@ require_once __DIR__ . '/../layout/header.php';
 
 <!-- Header Info Card -->
 <div class="dashboard-header-card">
-    <div class="welcome-info">
+    <div class="welcome-info" style="flex: 1; margin-right: 20px;">
         <h2>Faculty Subject Selection</h2>
-        <p>
-            Welcome, <strong><?= Response::escape($faculty['name']) ?></strong> &bull; 
-            <span><?= Response::escape($faculty['email']) ?></span> &bull; 
-            Emp Code: <strong><?= Response::escape($faculty['employee_code']) ?></strong>
+        <p style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.85rem;">
+            Official Email: <strong style="color: var(--bwu-navy);"><?= Response::escape($faculty['email']) ?></strong> &bull; Department of Computational Sciences
         </p>
+
+        <!-- Form fields for Faculty Name & Employee Code -->
+        <div style="display: flex; flex-wrap: wrap; gap: 14px; background: rgba(255, 255, 255, 0.85); border: 1px solid var(--border-color); padding: 14px 18px; border-radius: var(--radius-md); backdrop-filter: blur(8px); margin-bottom: 8px;">
+            <div style="flex: 1; min-width: 220px;">
+                <label for="headerFacultyName" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--bwu-navy); margin-bottom: 4px;">
+                    Faculty Full Name <span style="color: #ef4444;">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="headerFacultyName" 
+                    class="form-control-custom" 
+                    value="<?= Response::escape($faculty['name']) ?>" 
+                    placeholder="Enter your full name" 
+                    required 
+                    style="background: #ffffff;"
+                >
+            </div>
+            <div style="flex: 1; min-width: 220px;">
+                <label for="headerEmployeeCode" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--bwu-navy); margin-bottom: 4px;">
+                    Employee Code <span style="color: #ef4444;">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="headerEmployeeCode" 
+                    class="form-control-custom" 
+                    value="<?= Response::escape($faculty['employee_code']) ?>" 
+                    placeholder="Enter employee code (e.g. BWU/EMP/101)" 
+                    required 
+                    style="background: #ffffff;"
+                >
+            </div>
+        </div>
+
         <p style="margin-top: 4px; color: var(--text-muted); font-size: 0.82rem;">
-            Please select <strong>exactly 5 subjects</strong> in your preferred teaching order.
+            Please enter your <strong>Faculty Name</strong> and <strong>Employee Code</strong> above, then select <strong>exactly 5 subjects</strong> in order of preference.
         </p>
     </div>
 

@@ -17,10 +17,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnConfirm = document.getElementById('btnConfirmSubmit');
     const btnSubmitText = document.getElementById('btnSubmitText');
 
+    const headerName = document.getElementById('headerFacultyName');
+    const headerCode = document.getElementById('headerEmployeeCode');
+    const modalName = document.getElementById('inputFacultyName');
+    const modalCode = document.getElementById('inputEmployeeCode');
+
+    // Bi-directional synchronization between header inputs and modal inputs
+    if (headerName && modalName) {
+        headerName.addEventListener('input', () => { modalName.value = headerName.value; });
+        modalName.addEventListener('input', () => { headerName.value = modalName.value; });
+    }
+    if (headerCode && modalCode) {
+        headerCode.addEventListener('input', () => { modalCode.value = headerCode.value; });
+        modalCode.addEventListener('input', () => { headerCode.value = modalCode.value; });
+    }
+
+    function isProfileDetailsValid() {
+        const nameVal = headerName ? headerName.value.trim() : (modalName ? modalName.value.trim() : '');
+        const codeVal = headerCode ? headerCode.value.trim() : (modalCode ? modalCode.value.trim() : '');
+        return { nameVal, codeVal, isValid: (nameVal !== '' && codeVal !== '') };
+    }
+
     if (!cards.length) return;
 
     cards.forEach(card => {
         card.addEventListener('click', () => {
+            // Check if user has filled Faculty Name & Employee Code
+            const profile = isProfileDetailsValid();
+            if (!profile.isValid) {
+                showToast('Please fill in your Faculty Name and Employee Code first before selecting subjects.', 'warning');
+                if (!profile.nameVal && headerName) {
+                    headerName.focus();
+                    headerName.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else if (!profile.codeVal && headerCode) {
+                    headerCode.focus();
+                    headerCode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                return;
+            }
+
             const id = parseInt(card.getAttribute('data-id'), 10);
             const code = card.getAttribute('data-code');
             const name = card.getAttribute('data-name');
@@ -97,10 +132,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Modal Handling
     if (btnReview) {
         btnReview.addEventListener('click', () => {
+            const profile = isProfileDetailsValid();
+            if (!profile.isValid) {
+                showToast('Please fill in your Faculty Name and Employee Code before reviewing.', 'warning');
+                if (!profile.nameVal && headerName) headerName.focus();
+                else if (!profile.codeVal && headerCode) headerCode.focus();
+                return;
+            }
+
             if (selectedSubjects.length !== MAX_SELECTION) {
                 showToast('Please select exactly 5 subjects.', 'warning');
                 return;
             }
+
+            if (headerName && modalName) modalName.value = headerName.value.trim();
+            if (headerCode && modalCode) modalCode.value = headerCode.value.trim();
 
             // Populate Review List with exact selection order
             reviewList.innerHTML = '';
