@@ -1,0 +1,65 @@
+<?php
+// Brainware University Employee Subject Selection System
+// Database Connection Manager using PHP PDO
+declare(strict_types=1);
+
+require_once __DIR__ . '/../config/config.php';
+
+class Database
+{
+    private static ?PDO $pdo = null;
+
+    public static function getConnection(): PDO
+    {
+        if (self::$pdo !== null) {
+            return self::$pdo;
+        }
+
+        $host = (string)Config::get('DB_HOST', '127.0.0.1');
+        $port = (string)Config::get('DB_PORT', '3306');
+        $dbname = (string)Config::get('DB_DATABASE', 'bwu_subject_selection');
+        $username = (string)Config::get('DB_USERNAME', 'root');
+        $password = (string)Config::get('DB_PASSWORD', '');
+
+        $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
+
+        $options = [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
+        ];
+
+        // SSL options for hosted production MySQL (e.g. PlanetScale, TiDB, Aiven, AWS RDS)
+        $sslCa = Config::get('DB_SSL_CA');
+        if (!empty($sslCa) && file_exists((string)$sslCa)) {
+            $options[PDO::MYSQL_ATTR_SSL_CA] = (string)$sslCa;
+        }
+
+        try {
+            self::$pdo = new PDO($dsn, $username, $password, $options);
+            return self::$pdo;
+        } catch (PDOException $e) {
+            error_log("Database connection failed: " . $e->getMessage());
+            throw new RuntimeException("Database connection error. Please verify database credentials.");
+        }
+    }
+
+    public static function beginTransaction(): bool
+    {
+        return self::getConnection()->beginTransaction();
+    }
+
+    public static function commit(): bool
+    {
+        return self::getConnection()->commit();
+    }
+
+    public static function rollBack(): bool
+    {
+        if (self::getConnection()->inTransaction()) {
+            return self::getConnection()->rollBack();
+        }
+        return false;
+    }
+}
