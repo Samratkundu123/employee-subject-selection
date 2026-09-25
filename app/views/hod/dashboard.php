@@ -23,10 +23,18 @@ require_once __DIR__ . '/../layout/header.php';
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
             <span>Add Faculty</span>
         </button>
+        <button type="button" class="btn-primary-custom" id="btnClearAllFaculty" title="Delete all faculty records and submissions" style="width: auto; padding: 9px 16px; font-size: 0.88rem; background: #dc2626; border-color: #dc2626;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <span>Delete All Faculty</span>
+        </button>
         <a href="/api/hod/export" class="btn-excel-download" id="btnDownloadExcel">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             <span>Download Excel</span>
         </a>
+        <button type="button" class="btn-primary-custom" id="btnDeleteAllSubmissions" style="width: auto; padding: 9px 16px; font-size: 0.88rem; background: #dc2626; border-color: #dc2626;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            <span>Delete All Submissions</span>
+        </button>
     </div>
 </div>
 

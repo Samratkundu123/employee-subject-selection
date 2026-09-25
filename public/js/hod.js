@@ -287,6 +287,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Delete All Faculty Event Handler
+    const btnClearAllFaculty = document.getElementById('btnClearAllFaculty');
+    if (btnClearAllFaculty) {
+        btnClearAllFaculty.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to DELETE ALL faculty members and their subject submissions?\n\nThis action is permanent and cannot be undone.')) {
+                return;
+            }
+
+            btnClearAllFaculty.disabled = true;
+
+            try {
+                const res = await fetch('/api/hod/faculty/clear-all', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showToast('All faculty members and submissions have been cleared!', 'success');
+                    fetchFacultyData();
+                } else {
+                    showToast(data.message || 'Failed to clear faculty records.', 'error');
+                }
+            } catch (err) {
+                showToast('Network error while clearing faculty records.', 'error');
+            } finally {
+                btnClearAllFaculty.disabled = false;
+            }
+        });
+    }
+
     function escapeHtml(str) {
         if (!str) return '-';
         const div = document.createElement('div');

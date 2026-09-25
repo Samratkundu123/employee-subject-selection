@@ -108,6 +108,15 @@ class Router
                     }
                     break;
 
+                case '/api/hod/faculty/clear-all':
+                case '/api/hod/faculty/delete-all':
+                    if ($method === 'POST') {
+                        self::handleHodClearAllFaculty();
+                    } else {
+                        Response::json(['error' => 'Method Not Allowed'], 405);
+                    }
+                    break;
+
                 case '/api/hod/export':
                 case '/admin/export':
                     self::handleHodExport();
@@ -591,6 +600,25 @@ class Router
         header('Expires: 0');
         echo $csv;
         exit;
+    }
+
+    private static function handleHodClearAllFaculty(): void
+    {
+        Auth::requireHod(true);
+
+        try {
+            Faculty::deleteAll();
+            Response::json([
+                'success' => true,
+                'message' => 'All faculty records and submissions have been cleared successfully.'
+            ]);
+        } catch (Throwable $e) {
+            error_log("Clear all faculty error: " . $e->getMessage());
+            Response::json([
+                'success' => false,
+                'message' => 'Failed to clear faculty records: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // ==========================================

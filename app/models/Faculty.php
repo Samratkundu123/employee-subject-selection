@@ -216,4 +216,25 @@ class Faculty
 
         return $result;
     }
+
+    public static function deleteAll(): bool
+    {
+        $pdo = Database::getConnection();
+        $pdo->beginTransaction();
+        try {
+            $pdo->exec("SET FOREIGN_KEY_CHECKS = 0;");
+            $pdo->exec("TRUNCATE TABLE submission_subjects;");
+            $pdo->exec("TRUNCATE TABLE submissions;");
+            $pdo->exec("TRUNCATE TABLE faculty;");
+            $pdo->exec("TRUNCATE TABLE login_attempts;");
+            $pdo->exec("SET FOREIGN_KEY_CHECKS = 1;");
+            $pdo->commit();
+            return true;
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+    }
 }
