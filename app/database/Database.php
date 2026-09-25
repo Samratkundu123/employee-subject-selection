@@ -41,7 +41,34 @@ class Database
             return self::$pdo;
         } catch (PDOException $e) {
             error_log("Database connection failed: " . $e->getMessage());
-            throw new RuntimeException("Database connection error. Please verify database credentials.");
+            throw new RuntimeException("Could not connect to MySQL at {$host}:{$port} (database: '{$dbname}'). Error: " . $e->getMessage());
+        }
+    }
+
+    public static function testConnection(): array
+    {
+        $host = (string)Config::get('DB_HOST', '127.0.0.1');
+        $port = (string)Config::get('DB_PORT', '3306');
+        $dbname = (string)Config::get('DB_DATABASE', 'bwu_subject_selection');
+
+        try {
+            $pdo = self::getConnection();
+            $pdo->query("SELECT 1");
+            return [
+                'status'   => 'connected',
+                'host'     => $host,
+                'port'     => $port,
+                'database' => $dbname,
+                'error'    => null
+            ];
+        } catch (Throwable $e) {
+            return [
+                'status'   => 'error',
+                'host'     => $host,
+                'port'     => $port,
+                'database' => $dbname,
+                'error'    => $e->getMessage()
+            ];
         }
     }
 

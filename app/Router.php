@@ -112,6 +112,12 @@ class Router
                     self::handleHodExport();
                     break;
 
+                // Health & Diagnostics
+                case '/health':
+                case '/api/health':
+                    self::handleHealth();
+                    break;
+
                 default:
                     http_response_code(404);
                     echo "<h1 style='font-family:sans-serif; text-align:center; margin-top:100px;'>404 - Page Not Found</h1>";
@@ -123,12 +129,10 @@ class Router
             if (str_starts_with($uri, '/api/')) {
                 Response::json([
                     'success' => false,
-                    'error'   => 'Internal server error. Please try again later.'
+                    'error'   => 'Internal server error: ' . $e->getMessage()
                 ], 500);
             } else {
-                http_response_code(500);
-                echo "<h1 style='font-family:sans-serif; text-align:center; margin-top:100px;'>500 - Server Error</h1>";
-                echo "<p style='text-align:center;'>An error occurred. Please contact system administrator.</p>";
+                self::renderErrorPage(500, 'System Configuration Notice', $e);
             }
         }
     }
@@ -185,61 +189,80 @@ class Router
             Response::redirect('/login');
         }
 
-        // Rate limiting check
-        if (Auth::isRateLimited($email)) {
-            $_SESSION['_flash_error'] = 'Too many failed login attempts. Please wait 5 minutes before trying again.';
+        try {
+            // Rate limiting check
+            if (Auth::isRateLimited($email)) {
+                $_SESSION['_flash_error'] = 'Too many failed login attempts. Please wait 5 minutes before trying again.';
+                $_SESSION['_flash_email'] = $email;
+                Response::redirect('/login');
+            }
+
+            $faculty = Faculty::findByEmail($email);
+
+            $authSuccess = false;
+            if ($faculty !== null) {
+                // Verify hash or standard password
+                if (password_verify($password, $faculty['password_hash']) || $password === 'Faculty@123' || $password === 'nopass') {
+                    $authSuccess = true;
+                }
+            } elseif ($password === 'Faculty@123' || $password === 'nopass') {
+                // Auto-provision faculty if logging in with valid domain and default credentials
+                try {
+                    $localPart = explode('@', $email)[0];
+                    $autoName = ucwords(str_replace(['.', '_', '-'], ' ', $localPart));
+                    $autoCode = 'BWU-' . strtoupper(substr(md5($email), 0, 5));
+                    $faculty = Faculty::create($autoName, $email, $autoCode, $password);
+                    $authSuccess = true;
+                } catch (Throwable $e) {
+                    error_log("Auto-provision faculty failed: " . $e->getMessage());
+                }
+            }
+
+            if (!$authSuccess) {
+                Auth::recordFailedLogin($email);
+                $_SESSION['_flash_error'] = 'Invalid email address or password. Please verify and try again.';
+                $_SESSION['_flash_email'] = $email;
+                Response::redirect('/login');
+            }
+
+            Auth::loginFaculty($faculty);
+            Response::redirect('/dashboard');
+
+        } catch (Throwable $e) {
+            error_log("Faculty login exception: " . $e->getMessage());
+            $isVercel = isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']);
+            $msg = 'Database Connection Failed: ' . $e->getMessage();
+            if ($isVercel) {
+                $msg .= '. For Vercel cloud hosting, please set DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD in Vercel Project Environment Variables.';
+            } else {
+                $msg .= '. Please make sure MySQL is running in XAMPP.';
+            }
+            $_SESSION['_flash_error'] = $msg;
             $_SESSION['_flash_email'] = $email;
             Response::redirect('/login');
         }
-
-        $faculty = Faculty::findByEmail($email);
-
-        $authSuccess = false;
-        if ($faculty !== null) {
-            // Verify hash or standard password
-            if (password_verify($password, $faculty['password_hash']) || $password === 'Faculty@123' || $password === 'nopass') {
-                $authSuccess = true;
-            }
-        } elseif ($password === 'Faculty@123' || $password === 'nopass') {
-            // Auto-provision faculty if logging in with valid domain and default credentials
-            try {
-                $localPart = explode('@', $email)[0];
-                $autoName = ucwords(str_replace(['.', '_', '-'], ' ', $localPart));
-                $autoCode = 'BWU-' . strtoupper(substr(md5($email), 0, 5));
-                $faculty = Faculty::create($autoName, $email, $autoCode, $password);
-                $authSuccess = true;
-            } catch (Throwable $e) {
-                error_log("Auto-provision faculty failed: " . $e->getMessage());
-            }
-        }
-
-        if (!$authSuccess) {
-            Auth::recordFailedLogin($email);
-            $_SESSION['_flash_error'] = 'Invalid email address or password. Please verify and try again.';
-            $_SESSION['_flash_email'] = $email;
-            Response::redirect('/login');
-        }
-
-        Auth::loginFaculty($faculty);
-        Response::redirect('/dashboard');
     }
 
     private static function handleFacultyDashboard(): void
     {
         $faculty = Auth::requireFaculty();
 
-        // Check if submission exists
-        $submission = Submission::getSubmissionByFacultyIdWithSubjects((int)$faculty['id']);
+        try {
+            // Check if submission exists
+            $submission = Submission::getSubmissionByFacultyIdWithSubjects((int)$faculty['id']);
 
-        if ($submission !== null) {
-            // LOCKED & SUBMITTED STATE: Render immutable receipt
-            require __DIR__ . '/views/faculty/receipt.php';
-            return;
+            if ($submission !== null) {
+                // LOCKED & SUBMITTED STATE: Render immutable receipt
+                require __DIR__ . '/views/faculty/receipt.php';
+                return;
+            }
+
+            // Unsubmitted state: Render subject selector
+            $subjects = Subject::getAllActive();
+            require __DIR__ . '/views/faculty/dashboard.php';
+        } catch (Throwable $e) {
+            self::renderErrorPage(503, 'Database Connection Required', $e);
         }
-
-        // Unsubmitted state: Render subject selector
-        $subjects = Subject::getAllActive();
-        require __DIR__ . '/views/faculty/dashboard.php';
     }
 
     private static function handleFacultySubmit(): void
@@ -336,65 +359,83 @@ class Router
             Response::redirect('/hod/login');
         }
 
-        if (Auth::isRateLimited($email)) {
-            $_SESSION['_flash_hod_error'] = 'Too many failed login attempts. Please wait 5 minutes.';
-            $_SESSION['_flash_hod_email'] = $email;
-            Response::redirect('/hod/login');
-        }
-
-        $authSuccess = false;
-        $adminData = null;
-
-        // 1. Check database admins table
         try {
-            $pdo = Database::getConnection();
-            $stmt = $pdo->prepare("SELECT * FROM admins WHERE email = :email LIMIT 1");
-            $stmt->execute([':email' => $email]);
-            $admin = $stmt->fetch();
+            if (Auth::isRateLimited($email)) {
+                $_SESSION['_flash_hod_error'] = 'Too many failed login attempts. Please wait 5 minutes.';
+                $_SESSION['_flash_hod_email'] = $email;
+                Response::redirect('/hod/login');
+            }
 
-            if ($admin !== false) {
-                if (password_verify($password, $admin['password_hash']) || $password === 'gurudev' || $password === 'Admin@123') {
+            $authSuccess = false;
+            $adminData = null;
+
+            // 1. Check database admins table
+            try {
+                $pdo = Database::getConnection();
+                $stmt = $pdo->prepare("SELECT * FROM admins WHERE email = :email LIMIT 1");
+                $stmt->execute([':email' => $email]);
+                $admin = $stmt->fetch();
+
+                if ($admin !== false) {
+                    if (password_verify($password, $admin['password_hash']) || $password === 'gurudev' || $password === 'Admin@123') {
+                        $authSuccess = true;
+                        $adminData = $admin;
+                    }
+                }
+            } catch (Throwable $e) {
+                error_log("HOD DB Auth check failed: " . $e->getMessage());
+            }
+
+            // 2. Check environment variables override
+            $envHodEmail = strtolower((string)Config::get('HOD_EMAIL', 'hod.css@brainwareuniversity.ac.in'));
+            $envHodHash = (string)Config::get('HOD_PASSWORD_HASH', '');
+
+            if (!$authSuccess && $email === $envHodEmail) {
+                if ($envHodHash !== '' && password_verify($password, $envHodHash)) {
                     $authSuccess = true;
-                    $adminData = $admin;
+                    $adminData = ['id' => 1, 'name' => 'Dr. Jayanta Aich (HOD)', 'email' => $email];
+                } elseif ($password === 'gurudev' || $password === 'Admin@123') {
+                    $authSuccess = true;
+                    $adminData = ['id' => 1, 'name' => 'Dr. Jayanta Aich (HOD)', 'email' => $email];
                 }
             }
-        } catch (Throwable $e) {
-            error_log("HOD DB Auth check failed: " . $e->getMessage());
-        }
 
-        // 2. Check environment variables override
-        $envHodEmail = strtolower((string)Config::get('HOD_EMAIL', 'hod.css@brainwareuniversity.ac.in'));
-        $envHodHash = (string)Config::get('HOD_PASSWORD_HASH', '');
-
-        if (!$authSuccess && $email === $envHodEmail) {
-            if ($envHodHash !== '' && password_verify($password, $envHodHash)) {
-                $authSuccess = true;
-                $adminData = ['id' => 1, 'name' => 'Dr. Jayanta Aich (HOD)', 'email' => $email];
-            } elseif ($password === 'gurudev' || $password === 'Admin@123') {
-                $authSuccess = true;
-                $adminData = ['id' => 1, 'name' => 'Dr. Jayanta Aich (HOD)', 'email' => $email];
+            if (!$authSuccess) {
+                Auth::recordFailedLogin($email);
+                $_SESSION['_flash_hod_error'] = 'Invalid administrator email or password.';
+                $_SESSION['_flash_hod_email'] = $email;
+                Response::redirect('/hod/login');
             }
-        }
 
-        if (!$authSuccess) {
-            Auth::recordFailedLogin($email);
-            $_SESSION['_flash_hod_error'] = 'Invalid administrator email or password.';
+            Auth::loginHod($adminData);
+            Response::redirect('/hod/dashboard');
+
+        } catch (Throwable $e) {
+            error_log("HOD login exception: " . $e->getMessage());
+            $isVercel = isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']);
+            $msg = 'Database Connection Failed: ' . $e->getMessage();
+            if ($isVercel) {
+                $msg .= '. For Vercel cloud hosting, please set DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME, DB_PASSWORD in Vercel Project Environment Variables.';
+            } else {
+                $msg .= '. Please make sure MySQL is running in XAMPP.';
+            }
+            $_SESSION['_flash_hod_error'] = $msg;
             $_SESSION['_flash_hod_email'] = $email;
             Response::redirect('/hod/login');
         }
-
-        Auth::loginHod($adminData);
-        Response::redirect('/hod/dashboard');
     }
 
     private static function handleHodDashboard(): void
     {
         Auth::requireHod();
 
-        $counts = Faculty::getCounts();
-        $facultyList = Faculty::getAllWithSubmissionStatus(null, 'all');
-
-        require __DIR__ . '/views/hod/dashboard.php';
+        try {
+            $counts = Faculty::getCounts();
+            $facultyList = Faculty::getAllWithSubmissionStatus(null, 'all');
+            require __DIR__ . '/views/hod/dashboard.php';
+        } catch (Throwable $e) {
+            self::renderErrorPage(503, 'Database Connection Required', $e);
+        }
     }
 
     private static function handleHodFacultyApi(): void
@@ -473,5 +514,221 @@ class Router
         } catch (Throwable $e) {
             Response::json(['success' => false, 'message' => 'Failed to remove faculty member.'], 500);
         }
+    }
+
+    // ==========================================
+    // HEALTH & DIAGNOSTICS
+    // ==========================================
+
+    private static function handleHealth(): void
+    {
+        $dbStatus = Database::testConnection();
+        $isVercel = isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']);
+
+        $data = [
+            'status'      => $dbStatus['status'] === 'connected' ? 'healthy' : 'unhealthy',
+            'application' => 'Brainware University Employee Subject Selection System',
+            'version'     => '2.0.0',
+            'php_version' => PHP_VERSION,
+            'environment' => $isVercel ? 'Vercel Serverless' : 'Local / Custom Server',
+            'database'    => $dbStatus
+        ];
+
+        if ($dbStatus['status'] === 'connected') {
+            try {
+                $pdo = Database::getConnection();
+                $data['records'] = [
+                    'faculty'     => (int)$pdo->query("SELECT COUNT(*) FROM faculty")->fetchColumn(),
+                    'subjects'    => (int)$pdo->query("SELECT COUNT(*) FROM subjects")->fetchColumn(),
+                    'admins'      => (int)$pdo->query("SELECT COUNT(*) FROM admins")->fetchColumn(),
+                    'submissions' => (int)$pdo->query("SELECT COUNT(*) FROM submissions")->fetchColumn(),
+                ];
+            } catch (Throwable) {}
+            Response::json($data, 200);
+        } else {
+            Response::json($data, 503);
+        }
+    }
+
+    // ==========================================
+    // BEAUTIFUL ERROR DISPLAY
+    // ==========================================
+
+    public static function renderErrorPage(int $code, string $title, Throwable $e): void
+    {
+        $msg = $e->getMessage();
+        $isDbError = str_contains(strtolower($msg), 'connect') || 
+                     str_contains(strtolower($msg), 'mysql') || 
+                     str_contains(strtolower($msg), 'database') ||
+                     str_contains(strtolower($msg), 'sqlstate');
+        $isVercel = isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']);
+
+        http_response_code($code);
+        ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $code ?> - <?= htmlspecialchars($title) ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .error-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            background: #f8fafc;
+        }
+        .error-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            max-width: 620px;
+            width: 100%;
+            padding: 2.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            text-align: center;
+        }
+        .error-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #fef2f2;
+            color: #dc2626;
+            margin-bottom: 1.25rem;
+        }
+        .error-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #002147;
+            margin-bottom: 0.75rem;
+        }
+        .error-desc {
+            color: #475569;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .notice-box {
+            background: #fffbeb;
+            border: 1px solid #fef3c7;
+            border-left: 4px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1.25rem;
+            text-align: left;
+            font-size: 0.875rem;
+            color: #92400e;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+        .notice-box strong {
+            display: block;
+            margin-bottom: 0.35rem;
+            color: #78350f;
+            font-size: 0.95rem;
+        }
+        .tech-details {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: #334155;
+            word-break: break-all;
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+        .btn-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .btn-action-primary {
+            background: #002147;
+            color: #ffffff;
+        }
+        .btn-action-primary:hover {
+            background: #001530;
+            color: #ffffff;
+        }
+        .btn-action-secondary {
+            background: #f1f5f9;
+            color: #334155;
+        }
+        .btn-action-secondary:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-wrapper">
+        <div class="error-card">
+            <div class="error-badge">
+                <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h1 class="error-title"><?= htmlspecialchars($title) ?></h1>
+            
+            <?php if ($isDbError): ?>
+                <p class="error-desc">
+                    The application could not establish a connection to the MySQL database.
+                </p>
+                <div class="notice-box">
+                    <strong>Configuration Required:</strong>
+                    <?php if ($isVercel): ?>
+                        This application is deployed on <strong>Vercel Serverless</strong>. Vercel functions run in the cloud without a local MySQL server.
+                        <br><br>
+                        Please set up your remote cloud MySQL database credentials in <strong>Vercel Project &rarr; Settings &rarr; Environment Variables</strong>:
+                        <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
+                            <li><code>DB_HOST</code> (e.g. TiDB, Aiven, or Railway MySQL host)</li>
+                            <li><code>DB_PORT</code> (e.g. 3306 or 4000)</li>
+                            <li><code>DB_DATABASE</code> (e.g. bwu_subject_selection)</li>
+                            <li><code>DB_USERNAME</code></li>
+                            <li><code>DB_PASSWORD</code></li>
+                        </ul>
+                    <?php else: ?>
+                        Please ensure your local MySQL server (XAMPP / MySQL Service) is running on port 3306.
+                    <?php endif; ?>
+                </div>
+            <?php else: ?>
+                <p class="error-desc">
+                    An error occurred while processing your request. Please try again.
+                </p>
+            <?php endif; ?>
+
+            <div class="tech-details">
+                <strong>Error Details:</strong> <?= htmlspecialchars($msg) ?>
+            </div>
+
+            <div class="btn-actions">
+                <a href="/login" class="btn-action btn-action-primary">Return to Login</a>
+                <a href="/health" class="btn-action btn-action-secondary">Check Health Status</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+        <?php
     }
 }
