@@ -76,9 +76,40 @@ require_once __DIR__ . '/../layout/header.php';
 
         <div class="modal-body">
             <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 1.25rem;">
-                <p style="font-size: 0.88rem; margin-bottom: 4px;"><strong>Faculty Name:</strong> <?= Response::escape($faculty['name']) ?></p>
-                <p style="font-size: 0.88rem; margin-bottom: 4px;"><strong>Email:</strong> <?= Response::escape($faculty['email']) ?></p>
-                <p style="font-size: 0.88rem;"><strong>Employee Code:</strong> <?= Response::escape($faculty['employee_code']) ?></p>
+                <h4 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; color: var(--bwu-navy);">
+                    Faculty Details (Required for Submission) <span style="color: #ef4444;">*</span>
+                </h4>
+                <div style="margin-bottom: 10px;">
+                    <label for="inputFacultyName" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 3px; color: var(--text-primary);">
+                        Faculty Name <span style="color: #ef4444;">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="inputFacultyName" 
+                        class="form-control-custom" 
+                        value="<?= Response::escape($faculty['name']) ?>" 
+                        placeholder="e.g. Dr. Arindam Roy" 
+                        required 
+                        style="background: #ffffff;"
+                    >
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <label for="inputEmployeeCode" style="display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 3px; color: var(--text-primary);">
+                        Employee Code <span style="color: #ef4444;">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="inputEmployeeCode" 
+                        class="form-control-custom" 
+                        value="<?= Response::escape($faculty['employee_code']) ?>" 
+                        placeholder="e.g. BWU/EMP/2026/042" 
+                        required 
+                        style="background: #ffffff;"
+                    >
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">
+                    Official Email: <strong><?= Response::escape($faculty['email']) ?></strong>
+                </p>
             </div>
 
             <h4 style="font-size: 0.92rem; margin-bottom: 8px; color: var(--bwu-navy);">Selected Subjects (In Order):</h4>

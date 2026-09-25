@@ -314,7 +314,24 @@ class Router
             ], 400);
         }
 
+        $facultyName = trim((string)($data['faculty_name'] ?? ''));
+        $employeeCode = strtoupper(trim((string)($data['employee_code'] ?? '')));
+
+        if ($facultyName === '' || $employeeCode === '') {
+            Response::json([
+                'success' => false,
+                'message' => 'Faculty Name and Employee Code are required to complete your submission.'
+            ], 400);
+        }
+
         try {
+            // Update faculty name and employee code in database and active session
+            Faculty::updateDetails((int)$faculty['id'], $facultyName, $employeeCode);
+            if (isset($_SESSION['faculty_user'])) {
+                $_SESSION['faculty_user']['name'] = $facultyName;
+                $_SESSION['faculty_user']['employee_code'] = $employeeCode;
+            }
+
             $result = Submission::create(
                 (int)$faculty['id'],
                 (string)$faculty['email'],

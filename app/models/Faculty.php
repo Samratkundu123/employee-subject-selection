@@ -78,6 +78,32 @@ class Faculty
         return self::findById($newId);
     }
 
+    public static function updateDetails(int $id, string $name, string $employeeCode): bool
+    {
+        $cleanName = trim($name);
+        $cleanCode = strtoupper(trim($employeeCode));
+
+        if ($cleanName === '' || $cleanCode === '') {
+            throw new InvalidArgumentException("Faculty Name and Employee Code cannot be empty.");
+        }
+
+        $pdo = Database::getConnection();
+        
+        // Check if employee_code is already taken by another faculty member
+        $stmt = $pdo->prepare("SELECT id FROM faculty WHERE employee_code = :code AND id != :id LIMIT 1");
+        $stmt->execute([':code' => $cleanCode, ':id' => $id]);
+        if ($stmt->fetch()) {
+            throw new RuntimeException("The employee code '{$cleanCode}' is already registered to another faculty member.", 409);
+        }
+
+        $update = $pdo->prepare("UPDATE faculty SET name = :name, employee_code = :code WHERE id = :id");
+        return $update->execute([
+            ':name' => $cleanName,
+            ':code' => $cleanCode,
+            ':id'   => $id
+        ]);
+    }
+
     public static function delete(int $id): bool
     {
         $pdo = Database::getConnection();

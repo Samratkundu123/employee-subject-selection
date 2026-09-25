@@ -130,11 +130,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
+            const inputNameEl = document.getElementById('inputFacultyName');
+            const inputCodeEl = document.getElementById('inputEmployeeCode');
+
+            const facultyName = inputNameEl ? inputNameEl.value.trim() : '';
+            const employeeCode = inputCodeEl ? inputCodeEl.value.trim() : '';
+
+            if (!facultyName) {
+                showToast('Please enter your Faculty Name before submitting.', 'warning');
+                if (inputNameEl) inputNameEl.focus();
+                return;
+            }
+
+            if (!employeeCode) {
+                showToast('Please enter your Employee Code before submitting.', 'warning');
+                if (inputCodeEl) inputCodeEl.focus();
+                return;
+            }
+
             btnConfirm.disabled = true;
             btnSubmitText.textContent = 'Submitting & Locking...';
 
             const payload = {
                 csrf_token: window.BWU_CSRF_TOKEN || '',
+                faculty_name: facultyName,
+                employee_code: employeeCode,
                 subject_ids: selectedSubjects.map(s => s.id)
             };
 
