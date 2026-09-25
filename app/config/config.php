@@ -53,18 +53,21 @@ class Config
     {
         self::init();
 
-        if (isset(self::$env[$key])) {
-            return self::$env[$key];
+        // 1. Real environment variables (e.g. Vercel Project Settings, Docker, Cloud host) take highest precedence
+        $val = getenv($key);
+        if ($val !== false && $val !== '') {
+            return $val;
         }
-        if (isset($_ENV[$key])) {
+        if (!empty($_ENV[$key])) {
             return $_ENV[$key];
         }
-        if (isset($_SERVER[$key])) {
+        if (!empty($_SERVER[$key])) {
             return $_SERVER[$key];
         }
-        $val = getenv($key);
-        if ($val !== false) {
-            return $val;
+
+        // 2. Fallback to parsed local .env
+        if (isset(self::$env[$key]) && self::$env[$key] !== '') {
+            return self::$env[$key];
         }
 
         return $default;
