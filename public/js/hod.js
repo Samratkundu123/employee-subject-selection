@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!faculty || faculty.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="10" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                    <td colspan="11" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
                         No faculty records found matching current criteria.
                     </td>
                 </tr>
@@ -84,10 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tr.innerHTML = `
                 <td>${f.sl_no}</td>
-                <td>
-                    <strong>${escapeHtml(f.faculty_name)}</strong>
-                    <div style="font-size: 0.74rem; color: var(--text-muted);">${escapeHtml(f.employee_code)}</div>
-                </td>
+                <td><strong>${escapeHtml(f.faculty_name)}</strong></td>
+                <td><code style="background: #f1f5f9; padding: 2px 7px; border-radius: 4px; font-weight: 700; color: #002147; font-size: 0.84rem;">${escapeHtml(f.employee_code)}</code></td>
                 <td>${escapeHtml(f.faculty_email)}</td>
                 <td>${escapeHtml(f.subject_1)}</td>
                 <td>${escapeHtml(f.subject_2)}</td>

@@ -99,7 +99,8 @@ require_once __DIR__ . '/../layout/header.php';
                 <tr>
                     <th style="width: 50px;">Sl. No.</th>
                     <th>Faculty Name</th>
-                    <th>Email</th>
+                    <th>Faculty Employee Code</th>
+                    <th>Faculty Email ID</th>
                     <th>Subject 1</th>
                     <th>Subject 2</th>
                     <th>Subject 3</th>
@@ -112,7 +113,7 @@ require_once __DIR__ . '/../layout/header.php';
             <tbody id="facultyTableBody">
                 <?php if (empty($facultyList)): ?>
                     <tr>
-                        <td colspan="10" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                        <td colspan="11" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
                             No faculty records found.
                         </td>
                     </tr>
@@ -120,10 +121,8 @@ require_once __DIR__ . '/../layout/header.php';
                     <?php foreach ($facultyList as $f): ?>
                         <tr>
                             <td><?= (int)$f['sl_no'] ?></td>
-                            <td>
-                                <strong><?= Response::escape($f['faculty_name']) ?></strong>
-                                <div style="font-size: 0.74rem; color: var(--text-muted);"><?= Response::escape($f['employee_code']) ?></div>
-                            </td>
+                            <td><strong><?= Response::escape($f['faculty_name']) ?></strong></td>
+                            <td><code style="background: #f1f5f9; padding: 2px 7px; border-radius: 4px; font-weight: 700; color: #002147; font-size: 0.84rem;"><?= Response::escape($f['employee_code']) ?></code></td>
                             <td><?= Response::escape($f['faculty_email']) ?></td>
                             <td><?= Response::escape($f['subject_1']) ?></td>
                             <td><?= Response::escape($f['subject_2']) ?></td>
@@ -144,6 +143,8 @@ require_once __DIR__ . '/../layout/header.php';
             </tbody>
         </table>
     </div>
+</div>
+
 <!-- Add Faculty Modal -->
 <div id="addFacultyModal" class="modal-overlay">
     <div class="modal-card">
@@ -154,20 +155,20 @@ require_once __DIR__ . '/../layout/header.php';
         <form id="addFacultyForm" autocomplete="off">
             <div class="modal-body">
                 <div class="form-group">
-                    <label for="newFacultyName">Full Name</label>
-                    <input type="text" id="newFacultyName" class="form-control-custom" placeholder="e.g. Dr. Jane Doe" required>
+                    <label for="newFacultyName">Faculty Name <span style="color: #ef4444;">*</span></label>
+                    <input type="text" id="newFacultyName" class="form-control-custom" placeholder="e.g. Dr. Arindam Roy" required>
                 </div>
                 <div class="form-group">
-                    <label for="newFacultyEmail">Official Email Address</label>
-                    <input type="email" id="newFacultyEmail" class="form-control-custom" placeholder="e.g. jane.cs@brainwareuniversity.ac.in" required>
+                    <label for="newFacultyCode">Faculty Employee Code <span style="color: #ef4444;">*</span></label>
+                    <input type="text" id="newFacultyCode" class="form-control-custom" placeholder="e.g. BWU/EMP/2026/042" required>
                 </div>
                 <div class="form-group">
-                    <label for="newFacultyCode">Employee Code</label>
-                    <input type="text" id="newFacultyCode" class="form-control-custom" placeholder="e.g. BWU-FAC-011" required>
+                    <label for="newFacultyEmail">Faculty Email ID <span style="color: #ef4444;">*</span></label>
+                    <input type="email" id="newFacultyEmail" class="form-control-custom" placeholder="e.g. arindam.cs@brainwareuniversity.ac.in" required>
                 </div>
                 <div class="form-group">
-                    <label for="newFacultyPassword">Initial Password <span style="font-weight: normal; color: var(--text-muted);">(Optional, defaults to Faculty@123)</span></label>
-                    <input type="password" id="newFacultyPassword" class="form-control-custom" placeholder="Faculty@123">
+                    <label for="newFacultyPassword">Password <span style="font-weight: normal; color: var(--text-muted);">(Optional, defaults to nopass)</span></label>
+                    <input type="password" id="newFacultyPassword" class="form-control-custom" placeholder="Enter password (default: nopass)">
                 </div>
             </div>
             <div class="modal-footer">
