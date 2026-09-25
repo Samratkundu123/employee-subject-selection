@@ -30,10 +30,23 @@ class Database
             PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
         ];
 
-        // SSL options for hosted production MySQL (e.g. PlanetScale, TiDB, Aiven, AWS RDS)
+        // SSL options for hosted production MySQL (e.g. TiDB Cloud, PlanetScale, Aiven, AWS RDS)
         $sslCa = Config::get('DB_SSL_CA');
         if (!empty($sslCa) && file_exists((string)$sslCa)) {
             $options[PDO::MYSQL_ATTR_SSL_CA] = (string)$sslCa;
+        } else {
+            // Auto-detect standard Linux CA bundles on Vercel / AWS Lambda
+            $caPaths = [
+                '/etc/pki/tls/certs/ca-bundle.crt',
+                '/etc/ssl/certs/ca-certificates.crt',
+                '/etc/ssl/cert.pem'
+            ];
+            foreach ($caPaths as $caPath) {
+                if (file_exists($caPath)) {
+                    $options[PDO::MYSQL_ATTR_SSL_CA] = $caPath;
+                    break;
+                }
+            }
         }
 
         try {
