@@ -15,6 +15,10 @@ require_once __DIR__ . '/../layout/header.php';
             <svg id="refreshIcon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             <span>Refresh</span>
         </button>
+        <button type="button" class="btn-secondary-custom" id="btnOpenChangePassword" title="Change HOD Account Password" style="display: inline-flex; align-items: center; gap: 6px; padding: 9px 15px; font-size: 0.88rem; background: #ffffff; border: 1px solid var(--border-color); color: var(--bwu-navy); border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all 0.2s;">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            <span>Change Password</span>
+        </button>
         <button type="button" class="btn-primary-custom" id="btnOpenUploadSubjects" style="width: auto; padding: 9px 16px; font-size: 0.88rem; background: #0284c7; border-color: #0284c7;">
             <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
             <span>Upload Subjects</span>
@@ -239,6 +243,78 @@ require_once __DIR__ . '/../layout/header.php';
     </div>
 </div>
 
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="modal-overlay">
+    <div class="modal-card" style="max-width: 460px;">
+        <div class="modal-header">
+            <h3 style="display: flex; align-items: center; gap: 8px;">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                Change HOD Password
+            </h3>
+            <button type="button" class="modal-close-btn" id="btnChangePasswordClose">&times;</button>
+        </div>
+        <form id="changePasswordForm" autocomplete="off">
+            <div class="modal-body">
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.55;">
+                    Enter your current password then choose a new secure password.
+                </p>
+
+                <div class="form-group">
+                    <label for="cpCurrentPassword">Current Password <span style="color: #ef4444;">*</span></label>
+                    <div style="position: relative;">
+                        <input type="password" id="cpCurrentPassword" class="form-control-custom"
+                               placeholder="Enter your current password" required autocomplete="current-password"
+                               style="padding-right: 42px;">
+                        <button type="button" class="pwd-toggle-btn" data-target="cpCurrentPassword"
+                                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px;" title="Show/hide password">
+                            <svg class="eye-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cpNewPassword">New Password <span style="color: #ef4444;">*</span></label>
+                    <div style="position: relative;">
+                        <input type="password" id="cpNewPassword" class="form-control-custom"
+                               placeholder="Enter new password (min 6 characters)" required autocomplete="new-password"
+                               style="padding-right: 42px;">
+                        <button type="button" class="pwd-toggle-btn" data-target="cpNewPassword"
+                                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px;" title="Show/hide password">
+                            <svg class="eye-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cpRetypePassword">Re-enter New Password <span style="color: #ef4444;">*</span></label>
+                    <div style="position: relative;">
+                        <input type="password" id="cpRetypePassword" class="form-control-custom"
+                               placeholder="Re-enter new password to confirm" required autocomplete="new-password"
+                               style="padding-right: 42px;">
+                        <button type="button" class="pwd-toggle-btn" data-target="cpRetypePassword"
+                                style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 4px;" title="Show/hide password">
+                            <svg class="eye-icon" width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </div>
+                    <div id="cpMatchIndicator" style="margin-top: 6px; font-size: 0.8rem; display: none;"></div>
+                </div>
+
+                <div id="cpStatusMsg" style="display: none; margin-top: 0.75rem; padding: 0.65rem 1rem; border-radius: 8px; font-size: 0.84rem;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary-custom" id="btnChangePasswordCancel">Cancel</button>
+                <button type="submit" class="btn-primary-custom" id="btnSavePassword" style="width: auto; background: var(--bwu-navy); border-color: var(--bwu-navy);">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 4px;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span id="cpBtnText">Update Password</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    window.BWU_CSRF_TOKEN = "<?= Auth::csrfToken() ?>";
+</script>
 <script src="/js/hod.js"></script>
 
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

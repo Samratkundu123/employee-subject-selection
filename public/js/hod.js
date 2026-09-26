@@ -320,6 +320,145 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ── Change Password Modal ──────────────────────────────────────────────
+    const changePasswordModal  = document.getElementById('changePasswordModal');
+    const btnOpenChangePassword = document.getElementById('btnOpenChangePassword');
+    const btnChangePasswordClose = document.getElementById('btnChangePasswordClose');
+    const btnChangePasswordCancel = document.getElementById('btnChangePasswordCancel');
+    const changePasswordForm   = document.getElementById('changePasswordForm');
+    const btnSavePassword      = document.getElementById('btnSavePassword');
+    const cpBtnText            = document.getElementById('cpBtnText');
+    const cpStatusMsg          = document.getElementById('cpStatusMsg');
+    const cpMatchIndicator     = document.getElementById('cpMatchIndicator');
+    const cpNewPassword        = document.getElementById('cpNewPassword');
+    const cpRetypePassword     = document.getElementById('cpRetypePassword');
+
+    function closeCpModal() {
+        if (changePasswordModal) changePasswordModal.classList.remove('active');
+        if (changePasswordForm) changePasswordForm.reset();
+        if (cpStatusMsg) cpStatusMsg.style.display = 'none';
+        if (cpMatchIndicator) cpMatchIndicator.style.display = 'none';
+    }
+
+    if (btnOpenChangePassword && changePasswordModal) {
+        btnOpenChangePassword.addEventListener('click', () => {
+            closeCpModal();
+            changePasswordModal.classList.add('active');
+            const firstInput = document.getElementById('cpCurrentPassword');
+            if (firstInput) firstInput.focus();
+        });
+    }
+
+    if (btnChangePasswordClose) btnChangePasswordClose.addEventListener('click', closeCpModal);
+    if (btnChangePasswordCancel) btnChangePasswordCancel.addEventListener('click', closeCpModal);
+
+    // Close modal on backdrop click
+    if (changePasswordModal) {
+        changePasswordModal.addEventListener('click', (e) => {
+            if (e.target === changePasswordModal) closeCpModal();
+        });
+    }
+
+    // Live password-match indicator
+    function checkPasswordMatch() {
+        if (!cpMatchIndicator || !cpRetypePassword || !cpNewPassword) return;
+        const val = cpRetypePassword.value;
+        if (val === '') {
+            cpMatchIndicator.style.display = 'none';
+            return;
+        }
+        cpMatchIndicator.style.display = 'block';
+        if (val === cpNewPassword.value) {
+            cpMatchIndicator.style.color = '#059669';
+            cpMatchIndicator.textContent = '✓ Passwords match';
+        } else {
+            cpMatchIndicator.style.color = '#dc2626';
+            cpMatchIndicator.textContent = '✗ Passwords do not match';
+        }
+    }
+    if (cpNewPassword)    cpNewPassword.addEventListener('input', checkPasswordMatch);
+    if (cpRetypePassword) cpRetypePassword.addEventListener('input', checkPasswordMatch);
+
+    // Show/Hide Password Toggles
+    document.querySelectorAll('.pwd-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            if (!input) return;
+            const isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            // Swap eye icon opacity as visual cue
+            btn.style.opacity = isHidden ? '0.5' : '1';
+        });
+    });
+
+    // Change Password Form Submit
+    if (changePasswordForm) {
+        changePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const currentPassword = document.getElementById('cpCurrentPassword').value;
+            const newPassword     = document.getElementById('cpNewPassword').value;
+            const retypePassword  = document.getElementById('cpRetypePassword').value;
+
+            if (!currentPassword || !newPassword || !retypePassword) {
+                showToast('Please fill in all three password fields.', 'warning');
+                return;
+            }
+            if (newPassword !== retypePassword) {
+                showToast('New password and re-entered password do not match.', 'error');
+                return;
+            }
+            if (newPassword.length < 6) {
+                showToast('New password must be at least 6 characters long.', 'warning');
+                return;
+            }
+
+            btnSavePassword.disabled = true;
+            if (cpBtnText) cpBtnText.textContent = 'Updating...';
+            if (cpStatusMsg) cpStatusMsg.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/hod/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        csrf_token:       window.BWU_CSRF_TOKEN || '',
+                        current_password: currentPassword,
+                        new_password:     newPassword,
+                        retype_password:  retypePassword
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    showToast('Password updated successfully!', 'success');
+                    closeCpModal();
+                } else {
+                    if (cpStatusMsg) {
+                        cpStatusMsg.style.display = 'block';
+                        cpStatusMsg.style.background = '#fef2f2';
+                        cpStatusMsg.style.color      = '#b91c1c';
+                        cpStatusMsg.style.border     = '1px solid #fecaca';
+                        cpStatusMsg.textContent = data.message || 'Failed to update password.';
+                    }
+                    showToast(data.message || 'Failed to update password.', 'error');
+                }
+            } catch (err) {
+                showToast('Network error while updating password. Please try again.', 'error');
+            } finally {
+                btnSavePassword.disabled = false;
+                if (cpBtnText) cpBtnText.textContent = 'Update Password';
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+
     function escapeHtml(str) {
         if (!str) return '-';
         const div = document.createElement('div');
