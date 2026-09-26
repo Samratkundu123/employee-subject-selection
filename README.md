@@ -177,12 +177,6 @@ CREATE TABLE `login_attempts` (
 
 ---
 
-## Default Login Credentials
-
-### HOD Administration
-- **URL**: `http://localhost:8000/hod/login`
-- **Email**: `hod.css@brainwareuniversity.ac.in`
-- **Password**: `gurudev` (or `Admin@123`)
 
 ### Faculty Accounts (Pre-Seeded)
 Default password for all sample faculty: `Faculty@123`
